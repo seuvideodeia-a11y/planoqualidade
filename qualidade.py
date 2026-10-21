@@ -7,7 +7,7 @@ import seaborn as sns
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
 
 # Configuração da página do Streamlit
 st.set_page_config(
@@ -38,7 +38,6 @@ def treinar_modelo():
     )
 
     # Ajustando a escala dos dados sintéticos para valores realistas de peso (g) e espessura (mm)
-    # Exemplo: Peso médio em torno de 250g, Espessura em torno de 15mm
     X_scaled = X_synthetic.copy()
     X_scaled[:, 0] = X_synthetic[:, 0] * 15 + 250   # Peso_gramas
     X_scaled[:, 1] = X_synthetic[:, 1] * 2 + 15      # Espessura_mm
@@ -94,7 +93,7 @@ espessura_input = st.sidebar.slider(
 btn_avaliar = st.sidebar.button("🔍 Avaliar Peça", use_container_width=True)
 
 # ---------------------------------------------------------
-# 3. LAYOUT PRINCIPAL (RESULTADOS E METRICAS)
+# 3. LAYOUT PRINCIPAL (RESULTADOS E MATRIZ DE CONFUSÃO)
 # ---------------------------------------------------------
 
 col1, col2 = st.columns([1, 1])
@@ -130,7 +129,7 @@ with col2:
     cm = confusion_matrix(y_test, y_pred)
 
     # Plotando a Matriz de Confusão
-    fig, ax = plt.subplots(figsize=(5, 4))
+    fig, ax = plt.subplots(figsize=(5, 3.8))
     sns.heatmap(
         cm, 
         annot=True, 
@@ -146,3 +145,24 @@ with col2:
     ax.set_title('Matriz de Confusão (Dados de Teste)')
     
     st.pyplot(fig)
+
+# ---------------------------------------------------------
+# 4. EXIBIÇÃO DO DATAFRAME ABAIXO DOS GRÁFICOS
+# ---------------------------------------------------------
+
+st.markdown("---")
+st.subheader("📋 Amostras e Resultados do Conjunto de Teste")
+st.markdown("Abaixo estão listadas as peças utilizadas para validação do modelo, comparando os valores reais com as predições do algoritmo SVM.")
+
+# Criando um DataFrame consolidado do conjunto de teste com as predições
+df_resultados_teste = X_test.copy()
+df_resultados_teste['Peso_gramas'] = df_resultados_teste['Peso_gramas'].round(2)
+df_resultados_teste['Espessura_mm'] = df_resultados_teste['Espessura_mm'].round(2)
+df_resultados_teste['Classe Real'] = [class_names[c] for c in y_test]
+df_resultados_teste['Classe Preditiva'] = [class_names[c] for c in y_pred]
+
+# Reordenando e resetando o índice para melhor visualização
+df_resultados_teste = df_resultados_teste.reset_index(drop=True)
+
+# Exibindo a tabela interativa no Streamlit
+st.dataframe(df_resultados_teste, use_container_width=True, height=300)
